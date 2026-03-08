@@ -1,135 +1,84 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include<stdio.h>
 
 /*
-Function: leaky_bucket
+This program simulates the Leaky Bucket algorithm.
 
-Simulates the Leaky Bucket traffic shaping algorithm.
-
-Parameters:
-bucket_capacity -> Maximum number of packets the bucket can hold
-leak_rate       -> Number of packets that can leave per time unit
-num_packets     -> Total number of incoming packets
-packets[]       -> Array containing packet sizes arriving at each time unit
+Leaky Bucket is used in computer networks to control traffic flow.
+Packets enter the bucket at variable rates, but they leave the bucket
+at a fixed outgoing rate.
+If the bucket becomes full, extra packets are dropped.
 */
 
-void leaky_bucket(int bucket_capacity, int leak_rate, int num_packets, int packets[]) {
+void main(){
 
-    int bucket = 0;   // Current number of packets stored in the bucket
+    int in;      // size of incoming packet
+    int out;     // outgoing packet rate (leak rate)
+    int bsize;   // total bucket capacity
+    int n;       // number of incoming packets
+    int bucket=0; // current number of packets in the bucket
 
-    // Table header for simulation output
-    printf("Time\tIncoming\tBucket\tLeaked\tRemaining\n");
+    // Read bucket size from user
+    printf("Enter the bucket size:"); 
+    scanf("%d",&bsize);
+
+    // Read how many packets will arrive
+    printf("Enter the number of inputs:");
+    scanf("%d",&n);
+
+    // Read outgoing packet rate
+    printf("Enter the packet outgoing rate:");
+    scanf("%d",&out);
 
     /*
-    Process each incoming packet one time step at a time
+    Continue processing packets until all inputs are handled
     */
-    for (int i = 0; i < num_packets; i++) {
+    while(n!=0)
+    {
 
-        // Print time and incoming packet size
-        printf("%d%10d", i + 1, packets[i]);
+        // Read incoming packet size
+        printf("\nEnter the incoming packet size:");
+        scanf("%d",&in);
+
+        printf("Incoming packet size:%d\n",in);
 
         /*
-        Step 1: Add incoming packets to the bucket
+        Check if incoming packet can fit in the remaining bucket space
+        Remaining space = bucket capacity - current bucket level
         */
-        bucket += packets[i];
+        if(in <= (bsize - bucket))
+        {
+            // Add packet to bucket
+            bucket += in;
 
-        /*
-        Step 2: Check if bucket exceeds capacity
-        If yes, overflow occurs and extra packets are dropped
-        */
-        if (bucket > bucket_capacity) {
-
-            printf("%10d(Overflowed, Dropped %d)",
-                   bucket_capacity,
-                   bucket - bucket_capacity);
-
-            bucket = bucket_capacity;  // keep bucket only at max capacity
+            printf("Bucket status:%d out of %d\n",bucket,bsize);
         }
-        else {
-            printf("%10d", bucket);
+        else
+        {
+            /*
+            If packet size exceeds remaining bucket space,
+            packet is dropped (overflow condition)
+            */
+            printf("Packet size greater than remaining bucket size !!\n");
+            printf("Packet dropped\n");
         }
 
         /*
-        Step 3: Leak packets at constant leak rate
-        If bucket has fewer packets than leak_rate,
-        leak only what is available.
+        Simulate packet transmission:
+        Packets leave the bucket at constant rate (out)
         */
-
-        int leaked = (bucket >= leak_rate) ? leak_rate : bucket;
-
-        // Reduce bucket level after leaking
-        bucket -= leaked;
+        bucket = bucket - out;
 
         /*
-        Print number of leaked packets and remaining packets
+        If outgoing packets are more than bucket contents,
+        bucket becomes empty (not negative)
         */
-        printf("%10d%10d\n", leaked, bucket);
+        if(bucket < 0)
+            bucket = 0;
+
+        // Display bucket status after outgoing packets
+        printf("After outgoing,bucket status:%d packets out of %d\n",bucket,bsize);
+
+        // Decrease number of remaining inputs
+        n--;
     }
-
-
-    /*
-    After all packets arrive,
-    we continue leaking remaining packets until bucket becomes empty
-    */
-
-    int time = num_packets + 1;
-
-    while (bucket > 0) {
-
-        int leaked = (bucket >= leak_rate) ? leak_rate : bucket;
-
-        printf("%d%10d%10d%10d%10d\n",
-               time,        // time step
-               0,           // no incoming packets now
-               bucket,      // bucket level before leaking
-               leaked,      // packets leaked
-               bucket - leaked); // remaining packets
-
-        bucket -= leaked;
-
-        time++;
-    }
-}
-
-
-/*
-Main function
-Handles user input and starts the simulation
-*/
-
-int main() {
-
-    int bucket_capacity;
-    int leak_rate;
-    int num_packets;
-
-    // Read bucket capacity
-    printf("Enter the bucket capacity: ");
-    scanf("%d", &bucket_capacity);
-
-    // Read leak rate
-    printf("Enter the leak rate: ");
-    scanf("%d", &leak_rate);
-
-    // Number of incoming packets
-    printf("Enter the number of packets: ");
-    scanf("%d", &num_packets);
-
-    /*
-    Create an array to store incoming packet sizes
-    */
-    int packets[num_packets];
-
-    printf("Enter the size of each incoming packet:\n");
-
-    for (int i = 0; i < num_packets; i++) {
-        scanf("%d", &packets[i]);
-    }
-
-    printf("\nLeaky Bucket Simulation:\n");
-
-    // Call the simulation function
-    leaky_bucket(bucket_capacity, leak_rate, num_packets, packets);
-
-    return 0;
 }
