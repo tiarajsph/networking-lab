@@ -1,117 +1,46 @@
-#include <sys/socket.h>   // for socket(), bind(), recvfrom()
-#include <netinet/in.h>   // for sockaddr_in structure
-#include <stdio.h>        // for printf()
-#include <string.h>       // for string handling
-#include <stdlib.h>       // for atoi()
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
 
-/*
-This program implements a UDP server using socket programming.
-
-Steps performed:
-1. Create a socket
-2. Configure server address
-3. Bind the socket to a port
-4. Wait for data from a client
-5. Receive and display the message
-*/
-
-int main(int argc, char *argv[])
+int main()
 {
-    struct sockaddr_in server, client;   // structures to store server and client addresses
+    char buf[100];
+    int k;
+    socklen_t len;
 
-    /*
-    argc should be 2:
-    argv[1] -> port number passed through command line
-    Example: ./server 3003
-    */
+    int sock_desc;
+    struct sockaddr_in server, client;
 
-    if (argc != 2)
-        printf("Input format not correct!\n");
+    sock_desc = socket(AF_INET, SOCK_DGRAM, 0);
+    if (sock_desc == -1)
+        printf("Error in socket creation!");
 
-
-    /*
-    Step 1: Create a socket
-
-    AF_INET     -> IPv4 address family
-    SOCK_DGRAM  -> UDP protocol
-    0           -> default protocol
-    */
-
-    int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
-
-    if (sockfd == -1)
-        printf("Error in socket creation!\n");
-
-
-    /*
-    Step 2: Configure server address
-    */
-
-    server.sin_family = AF_INET;          // IPv4 address family
-
-    /*
-    INADDR_ANY allows the server to accept packets
-    from any network interface.
-    */
-
+    server.sin_family = AF_INET;
     server.sin_addr.s_addr = INADDR_ANY;
+    server.sin_port = htons(2000);
 
-    /*
-    Convert port number from command line argument
-    from string to integer using atoi()
-    Then convert to network byte order using htons()
-    */
+    client.sin_family = AF_INET;
+    client.sin_addr.s_addr = INADDR_ANY;
+    client.sin_port = htons(2000);
 
-    server.sin_port = htons(atoi(argv[1]));
+    k = bind(sock_desc, (struct sockaddr *)&server, sizeof(server));
+    if (k == -1)
+        printf("Error in binding!");
 
-
-    /*
-    Step 3: Bind the socket to the specified port
-    This associates the socket with the server address
-    */
-
-    if (bind(sockfd, (struct sockaddr *)&server, sizeof(server)) < 0)
-        printf("Error in bind()!\n");
-
-
-    /*
-    Buffer to store received message
-    */
-
-    char buffer[100];
-
-
-    /*
-    socklen_t is used to store address size
-    */
-
-    socklen_t server_len = sizeof(server);
-
-
-    /*
-    Server waits for incoming datagrams
-    */
+    len = sizeof(client);
 
     printf("Server waiting...\n");
 
+    k = recvfrom(sock_desc, buf, 100, 0, (struct sockaddr *)&client, &len);
+    if (k == -1)
+        printf("Error in receiving!");
 
-    /*
-    Step 4: Receive message from client
+    printf("Message got from client: %s", buf);
 
-    recvfrom() is used in UDP communication
-    because UDP is connectionless.
-    */
-
-    if (recvfrom(sockfd, buffer, 100, 0, (struct sockaddr *)&server,
-                 &server_len) < 0)
-        printf("Error in receiving!\n");
-
-
-    /*
-    Step 5: Display received message
-    */
-
-    printf("Got a datagram: %s", buffer);
+    close(sock_desc);
 
     return 0;
 }
